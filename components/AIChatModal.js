@@ -31,7 +31,7 @@ import clarivoChatApi from "../services/clarivoChatApi";
   Do NOT keep API keys inside frontend React Native code.
   Use your backend API to call Groq safely.
 */
-const GROQ_API_KEY = "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";
+const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY;
 
 const CHAT_MODEL = "llama-3.3-70b-versatile";
 const TRANSCRIPTION_MODEL = "whisper-large-v3-turbo";

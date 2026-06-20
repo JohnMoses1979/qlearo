@@ -10,117 +10,99 @@ jobs:
     name: Build and Deploy
     runs-on: ubuntu-latest
 
+    env:
+      EC2_HOST: "${{ secrets.EC2_HOST }}"
+      EC2_USER: "${{ secrets.EC2_USER }}"
+
+      MYSQL_ROOT_PASSWORD: "${{ secrets.MYSQL_ROOT_PASSWORD }}"
+      MYSQL_DATABASE: "${{ secrets.MYSQL_DATABASE }}"
+      MYSQL_USER: "${{ secrets.MYSQL_USER }}"
+      MYSQL_PASSWORD: "${{ secrets.MYSQL_PASSWORD }}"
+
+      EXPO_PUBLIC_API_BASE_URL: "${{ secrets.EXPO_PUBLIC_API_BASE_URL }}"
+      JWT_SECRET: "${{ secrets.JWT_SECRET }}"
+
+      TWILIO_ACCOUNT_SID: "${{ secrets.TWILIO_ACCOUNT_SID }}"
+      TWILIO_AUTH_TOKEN: "${{ secrets.TWILIO_AUTH_TOKEN }}"
+      TWILIO_VERIFY_SID: "${{ secrets.TWILIO_VERIFY_SID }}"
+
+      GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
+
+      RAZORPAY_KEY_ID: "${{ secrets.RAZORPAY_KEY_ID }}"
+      RAZORPAY_KEY_SECRET: "${{ secrets.RAZORPAY_KEY_SECRET }}"
+      RAZORPAY_WEBHOOK_SECRET: "${{ secrets.RAZORPAY_WEBHOOK_SECRET }}"
+
+      MAIL_USERNAME: "${{ secrets.MAIL_USERNAME }}"
+      MAIL_PASSWORD: "${{ secrets.MAIL_PASSWORD }}"
+
     steps:
       - name: Setup SSH
+        shell: bash
         run: |
+          set -e
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/qlearo_key
           chmod 600 ~/.ssh/qlearo_key
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
 
-      - name: Prepare env files
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-          TWILIO_VERIFY_SID: ${{ secrets.TWILIO_VERIFY_SID }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
-          RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
-          RAZORPAY_WEBHOOK_SECRET: ${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
-          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+      - name: Create env files
+        shell: bash
         run: |
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
+          set -e
+          mkdir -p deploy-env
 
-          Path("deploy-env").mkdir(exist_ok=True)
+          {
+            echo "MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD"
+            echo "MYSQL_DATABASE=$MYSQL_DATABASE"
+            echo "MYSQL_USER=$MYSQL_USER"
+            echo "MYSQL_PASSWORD=$MYSQL_PASSWORD"
+            echo "EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL"
+          } > deploy-env/.env
 
-          ec2_host = os.getenv("EC2_HOST", "16.208.59.201")
-          mysql_root = os.getenv("MYSQL_ROOT_PASSWORD") or "Root@12345"
-          mysql_db = os.getenv("MYSQL_DATABASE") or "qlearo_db"
-          mysql_user = os.getenv("MYSQL_USER") or "qlearo_user"
-          mysql_pass = os.getenv("MYSQL_PASSWORD") or "Qlearo@12345"
-          api_url = os.getenv("EXPO_PUBLIC_API_BASE_URL") or f"http://{ec2_host}:8081/api"
+          {
+            echo "EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL"
+          } > deploy-env/frontend.env
 
-          jwt_secret = os.getenv("JWT_SECRET") or "change_this_jwt_secret"
-          twilio_account = os.getenv("TWILIO_ACCOUNT_SID") or ""
-          twilio_token = os.getenv("TWILIO_AUTH_TOKEN") or ""
-          twilio_verify = os.getenv("TWILIO_VERIFY_SID") or ""
-          groq = os.getenv("GROQ_API_KEY") or ""
+          {
+            echo "SERVER_PORT=8080"
+            echo "SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/$MYSQL_DATABASE?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+            echo "SPRING_DATASOURCE_USERNAME=$MYSQL_USER"
+            echo "SPRING_DATASOURCE_PASSWORD=$MYSQL_PASSWORD"
+            echo "SPRING_JPA_HIBERNATE_DDL_AUTO=update"
+            echo "JWT_SECRET=$JWT_SECRET"
+            echo "CORS_ALLOWED_ORIGINS=http://$EC2_HOST,http://$EC2_HOST:80,http://$EC2_HOST:8080,http://$EC2_HOST:8081"
+            echo "TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID"
+            echo "TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN"
+            echo "TWILIO_VERIFY_SID=$TWILIO_VERIFY_SID"
+            echo "TWILIO_VERIFY_SERVICE_SID=$TWILIO_VERIFY_SID"
+            echo "TWILIO_SERVICE_SID=$TWILIO_VERIFY_SID"
+            echo "GROQ_API_KEY=$GROQ_API_KEY"
+            echo "RAZORPAY_KEY_ID=$RAZORPAY_KEY_ID"
+            echo "RAZORPAY_KEY_SECRET=$RAZORPAY_KEY_SECRET"
+            echo "RAZORPAY_WEBHOOK_SECRET=$RAZORPAY_WEBHOOK_SECRET"
+            echo "RAZORPAY_CURRENCY=INR"
+            echo "MAIL_USERNAME=$MAIL_USERNAME"
+            echo "MAIL_PASSWORD=$MAIL_PASSWORD"
+            echo "MAIL_HOST=smtp.gmail.com"
+            echo "MAIL_PORT=587"
+            echo "SPRING_MAIL_HOST=smtp.gmail.com"
+            echo "SPRING_MAIL_PORT=587"
+            echo "SPRING_MAIL_USERNAME=$MAIL_USERNAME"
+            echo "SPRING_MAIL_PASSWORD=$MAIL_PASSWORD"
+            echo "SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true"
+            echo "SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true"
+          } > deploy-env/backend.env
 
-          razorpay_id = os.getenv("RAZORPAY_KEY_ID") or ""
-          razorpay_secret = os.getenv("RAZORPAY_KEY_SECRET") or ""
-          razorpay_webhook = os.getenv("RAZORPAY_WEBHOOK_SECRET") or ""
-
-          mail_user = os.getenv("MAIL_USERNAME") or "no-reply@qlearo.local"
-          mail_pass = os.getenv("MAIL_PASSWORD") or "dummy_mail_password"
-
-          Path("deploy-env/.env").write_text(f"""MYSQL_ROOT_PASSWORD={mysql_root}
-MYSQL_DATABASE={mysql_db}
-MYSQL_USER={mysql_user}
-MYSQL_PASSWORD={mysql_pass}
-EXPO_PUBLIC_API_BASE_URL={api_url}
-""")
-
-          Path("deploy-env/frontend.env").write_text(f"""EXPO_PUBLIC_API_BASE_URL={api_url}
-""")
-
-          Path("deploy-env/backend.env").write_text(f"""SERVER_PORT=8080
-
-SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/{mysql_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-SPRING_DATASOURCE_USERNAME={mysql_user}
-SPRING_DATASOURCE_PASSWORD={mysql_pass}
-SPRING_JPA_HIBERNATE_DDL_AUTO=update
-
-JWT_SECRET={jwt_secret}
-
-CORS_ALLOWED_ORIGINS=http://{ec2_host},http://{ec2_host}:80,http://{ec2_host}:8080,http://{ec2_host}:8081
-
-TWILIO_ACCOUNT_SID={twilio_account}
-TWILIO_AUTH_TOKEN={twilio_token}
-TWILIO_VERIFY_SID={twilio_verify}
-TWILIO_VERIFY_SERVICE_SID={twilio_verify}
-TWILIO_SERVICE_SID={twilio_verify}
-
-GROQ_API_KEY={groq}
-
-RAZORPAY_KEY_ID={razorpay_id}
-RAZORPAY_KEY_SECRET={razorpay_secret}
-RAZORPAY_WEBHOOK_SECRET={razorpay_webhook}
-RAZORPAY_CURRENCY=INR
-
-MAIL_USERNAME={mail_user}
-MAIL_PASSWORD={mail_pass}
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-
-SPRING_MAIL_HOST=smtp.gmail.com
-SPRING_MAIL_PORT=587
-SPRING_MAIL_USERNAME={mail_user}
-SPRING_MAIL_PASSWORD={mail_pass}
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
-""")
-          PY
-
-          echo "---- Generated env check ----"
-          grep '^SPRING_DATASOURCE_URL=' deploy-env/backend.env
-          grep '^SPRING_DATASOURCE_USERNAME=' deploy-env/backend.env
-          grep '^EXPO_PUBLIC_API_BASE_URL=' deploy-env/frontend.env
+          echo "Generated env files successfully"
+          grep "^SPRING_DATASOURCE_URL=" deploy-env/backend.env
+          grep "^EXPO_PUBLIC_API_BASE_URL=" deploy-env/frontend.env
 
       - name: Pull latest code on EC2
+        shell: bash
         run: |
-          ssh -i ~/.ssh/qlearo_key "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" <<'REMOTE_EOF'
+          set -e
+          ssh -i ~/.ssh/qlearo_key "$EC2_USER@$EC2_HOST" '
             set -e
-
             APP_DIR="/home/ubuntu/qlearo"
             REPO_URL="https://github.com/JohnMoses1979/qlearo.git"
 
@@ -135,25 +117,29 @@ SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
 
             sudo ufw allow 8081/tcp || true
             sudo ufw allow 8080/tcp || true
-          REMOTE_EOF
+          '
 
       - name: Upload env files to EC2
+        shell: bash
         run: |
-          scp -i ~/.ssh/qlearo_key deploy-env/.env "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/qlearo/.env"
-          scp -i ~/.ssh/qlearo_key deploy-env/frontend.env "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/qlearo/frontend.env"
-          scp -i ~/.ssh/qlearo_key deploy-env/backend.env "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/qlearo/backend.env"
+          set -e
+          scp -i ~/.ssh/qlearo_key deploy-env/.env "$EC2_USER@$EC2_HOST:/home/ubuntu/qlearo/.env"
+          scp -i ~/.ssh/qlearo_key deploy-env/frontend.env "$EC2_USER@$EC2_HOST:/home/ubuntu/qlearo/frontend.env"
+          scp -i ~/.ssh/qlearo_key deploy-env/backend.env "$EC2_USER@$EC2_HOST:/home/ubuntu/qlearo/backend.env"
 
       - name: Docker deploy on EC2
+        shell: bash
         run: |
-          ssh -i ~/.ssh/qlearo_key "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" <<'REMOTE_EOF'
+          set -e
+          ssh -i ~/.ssh/qlearo_key "$EC2_USER@$EC2_HOST" '
             set -e
-
             cd /home/ubuntu/qlearo
 
             echo "---- backend.env DB check ----"
-            grep '^SPRING_DATASOURCE_URL=' backend.env
-            grep '^SPRING_DATASOURCE_USERNAME=' backend.env
+            grep "^SPRING_DATASOURCE_URL=" backend.env
+            grep "^SPRING_DATASOURCE_USERNAME=" backend.env
 
+            echo "---- Docker deploy ----"
             docker compose down
             docker compose up -d --build
 
@@ -174,4 +160,4 @@ SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
             fi
 
             echo "Deployment successful"
-          REMOTE_EOF
+          '

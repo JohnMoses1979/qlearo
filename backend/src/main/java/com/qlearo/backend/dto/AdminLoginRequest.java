@@ -1,4 +1,4 @@
-﻿package com.qlearo.backend.dto;
+package com.qlearo.backend.dto;
 
 public class AdminLoginRequest {
 

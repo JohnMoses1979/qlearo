@@ -247,7 +247,31 @@ public class DoubtServiceImpl implements DoubtService {
         return toResponse(saved);
     }
 
-private void safeCreateNotification(
+    private void createNotification(
+        String recipientRole,
+        String recipientId,
+        String title,
+        String message,
+        String type,
+        String relatedId,
+        String categoryTitle,
+        String subjectId
+    ) {
+        StudentNotification notification = new StudentNotification();
+        notification.setId("NOTIF_" + System.currentTimeMillis());
+        notification.setRecipientRole(recipientRole);
+        notification.setRecipientId(recipientId);
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notification.setType(type);
+        notification.setRelatedTestId(relatedId);
+        notification.setCategoryTitle(categoryTitle);
+        notification.setSubjectId(subjectId);
+        notification.setRead(false);
+        notificationRepository.save(notification);
+    }
+
+    private void safeCreateNotification(
         String recipientRole,
         String recipientId,
         String title,

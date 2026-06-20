@@ -98,10 +98,4 @@ public class DoubtController {
     ) {
         return doubtService.markNotificationRead(recipientRole, recipientId, notificationId);
     }
-
-
-    private String stringValue(Object value) {
-        return value == null ? null : String.valueOf(value);
-    }
-
 }

@@ -1,4 +1,4 @@
-﻿package com.qlearo.backend.controller;
+package com.qlearo.backend.controller;
 
 import com.qlearo.backend.dto.AdminLoginRequest;
 import com.qlearo.backend.dto.ApiMessageResponse;

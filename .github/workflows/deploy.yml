@@ -14,7 +14,7 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/qlearo_key
+          echo "${{ secrets.EC2_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/qlearo_key
           chmod 600 ~/.ssh/qlearo_key
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
@@ -55,7 +55,6 @@ jobs:
 
           cat > deploy-env/backend.env <<ENVEOF
           SERVER_PORT=8080
-
           SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
           SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
           SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}

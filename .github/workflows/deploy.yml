@@ -11,23 +11,23 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      EC2_HOST: "${{ secrets.EC2_HOST }}"
-      EC2_USER: "${{ secrets.EC2_USER }}"
-      MYSQL_ROOT_PASSWORD: "${{ secrets.MYSQL_ROOT_PASSWORD }}"
-      MYSQL_DATABASE: "${{ secrets.MYSQL_DATABASE }}"
-      MYSQL_USER: "${{ secrets.MYSQL_USER }}"
-      MYSQL_PASSWORD: "${{ secrets.MYSQL_PASSWORD }}"
-      EXPO_PUBLIC_API_BASE_URL: "${{ secrets.EXPO_PUBLIC_API_BASE_URL }}"
-      JWT_SECRET: "${{ secrets.JWT_SECRET }}"
-      TWILIO_ACCOUNT_SID: "${{ secrets.TWILIO_ACCOUNT_SID }}"
-      TWILIO_AUTH_TOKEN: "${{ secrets.TWILIO_AUTH_TOKEN }}"
-      TWILIO_VERIFY_SID: "${{ secrets.TWILIO_VERIFY_SID }}"
-      GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
-      RAZORPAY_KEY_ID: "${{ secrets.RAZORPAY_KEY_ID }}"
-      RAZORPAY_KEY_SECRET: "${{ secrets.RAZORPAY_KEY_SECRET }}"
-      RAZORPAY_WEBHOOK_SECRET: "${{ secrets.RAZORPAY_WEBHOOK_SECRET }}"
-      MAIL_USERNAME: "${{ secrets.MAIL_USERNAME }}"
-      MAIL_PASSWORD: "${{ secrets.MAIL_PASSWORD }}"
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      EC2_USER: ${{ secrets.EC2_USER }}
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+      MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+      MYSQL_USER: ${{ secrets.MYSQL_USER }}
+      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+      TWILIO_VERIFY_SID: ${{ secrets.TWILIO_VERIFY_SID }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
+      RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
+      RAZORPAY_WEBHOOK_SECRET: ${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
+      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
 
     steps:
       - name: Setup SSH
@@ -45,51 +45,51 @@ jobs:
           set -e
           mkdir -p deploy-env
 
-          cat > deploy-env/.env <<EOF_ENV
-MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
-MYSQL_DATABASE=$MYSQL_DATABASE
-MYSQL_USER=$MYSQL_USER
-MYSQL_PASSWORD=$MYSQL_PASSWORD
-EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL
-EOF_ENV
+          printf '%s\n' \
+            "MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD" \
+            "MYSQL_DATABASE=$MYSQL_DATABASE" \
+            "MYSQL_USER=$MYSQL_USER" \
+            "MYSQL_PASSWORD=$MYSQL_PASSWORD" \
+            "EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL" \
+            > deploy-env/.env
 
-          cat > deploy-env/frontend.env <<EOF_FRONTEND
-EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL
-EOF_FRONTEND
+          printf '%s\n' \
+            "EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL" \
+            > deploy-env/frontend.env
 
-          cat > deploy-env/backend.env <<EOF_BACKEND
-SERVER_PORT=8080
-SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/$MYSQL_DATABASE?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-SPRING_DATASOURCE_USERNAME=$MYSQL_USER
-SPRING_DATASOURCE_PASSWORD=$MYSQL_PASSWORD
-SPRING_JPA_HIBERNATE_DDL_AUTO=update
-JWT_SECRET=$JWT_SECRET
-CORS_ALLOWED_ORIGINS=http://$EC2_HOST,http://$EC2_HOST:80,http://$EC2_HOST:8080,http://$EC2_HOST:8081
-TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID
-TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN
-TWILIO_VERIFY_SID=$TWILIO_VERIFY_SID
-TWILIO_VERIFY_SERVICE_SID=$TWILIO_VERIFY_SID
-TWILIO_SERVICE_SID=$TWILIO_VERIFY_SID
-GROQ_API_KEY=$GROQ_API_KEY
-RAZORPAY_KEY_ID=$RAZORPAY_KEY_ID
-RAZORPAY_KEY_SECRET=$RAZORPAY_KEY_SECRET
-RAZORPAY_WEBHOOK_SECRET=$RAZORPAY_WEBHOOK_SECRET
-RAZORPAY_CURRENCY=INR
-MAIL_USERNAME=$MAIL_USERNAME
-MAIL_PASSWORD=$MAIL_PASSWORD
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-SPRING_MAIL_HOST=smtp.gmail.com
-SPRING_MAIL_PORT=587
-SPRING_MAIL_USERNAME=$MAIL_USERNAME
-SPRING_MAIL_PASSWORD=$MAIL_PASSWORD
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
-EOF_BACKEND
+          printf '%s\n' \
+            "SERVER_PORT=8080" \
+            "SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/$MYSQL_DATABASE?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC" \
+            "SPRING_DATASOURCE_USERNAME=$MYSQL_USER" \
+            "SPRING_DATASOURCE_PASSWORD=$MYSQL_PASSWORD" \
+            "SPRING_JPA_HIBERNATE_DDL_AUTO=update" \
+            "JWT_SECRET=$JWT_SECRET" \
+            "CORS_ALLOWED_ORIGINS=http://$EC2_HOST,http://$EC2_HOST:80,http://$EC2_HOST:8080,http://$EC2_HOST:8081" \
+            "TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID" \
+            "TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN" \
+            "TWILIO_VERIFY_SID=$TWILIO_VERIFY_SID" \
+            "TWILIO_VERIFY_SERVICE_SID=$TWILIO_VERIFY_SID" \
+            "TWILIO_SERVICE_SID=$TWILIO_VERIFY_SID" \
+            "GROQ_API_KEY=$GROQ_API_KEY" \
+            "RAZORPAY_KEY_ID=$RAZORPAY_KEY_ID" \
+            "RAZORPAY_KEY_SECRET=$RAZORPAY_KEY_SECRET" \
+            "RAZORPAY_WEBHOOK_SECRET=$RAZORPAY_WEBHOOK_SECRET" \
+            "RAZORPAY_CURRENCY=INR" \
+            "MAIL_USERNAME=$MAIL_USERNAME" \
+            "MAIL_PASSWORD=$MAIL_PASSWORD" \
+            "MAIL_HOST=smtp.gmail.com" \
+            "MAIL_PORT=587" \
+            "SPRING_MAIL_HOST=smtp.gmail.com" \
+            "SPRING_MAIL_PORT=587" \
+            "SPRING_MAIL_USERNAME=$MAIL_USERNAME" \
+            "SPRING_MAIL_PASSWORD=$MAIL_PASSWORD" \
+            "SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true" \
+            "SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true" \
+            > deploy-env/backend.env
 
-          echo "Generated backend env:"
+          echo "Generated env files"
           grep "^SPRING_DATASOURCE_URL=" deploy-env/backend.env
-          grep "^SPRING_DATASOURCE_USERNAME=" deploy-env/backend.env
+          grep "^EXPO_PUBLIC_API_BASE_URL=" deploy-env/frontend.env
 
       - name: Pull latest code on EC2
         shell: bash
@@ -124,28 +124,28 @@ EOF_BACKEND
             grep "^SPRING_DATASOURCE_URL=" backend.env
             grep "^SPRING_DATASOURCE_USERNAME=" backend.env
 
-            echo "---- docker compose check ----"
-            grep -n "env_file" docker-compose.yml
+            echo "---- docker compose env check ----"
             grep -n "backend.env" docker-compose.yml
 
+            echo "---- Docker deploy ----"
             docker compose down
             docker compose up -d --build
 
             sleep 60
 
-            echo "---- containers ----"
+            echo "---- Containers ----"
             docker ps
 
-            echo "---- backend env inside container ----"
+            echo "---- Backend env inside container ----"
             docker exec qlearo_backend printenv | grep SPRING_DATASOURCE
 
-            echo "---- frontend check ----"
+            echo "---- Frontend check ----"
             curl -I http://localhost:8081
 
-            echo "---- backend check ----"
+            echo "---- Backend check ----"
             curl -I http://localhost:8080 || true
 
-            echo "---- fatal backend errors ----"
+            echo "---- Fatal backend errors ----"
             if docker compose logs backend --tail=200 | grep -Ei "Application run failed|Could not resolve placeholder|Unable to determine Dialect|Access denied|Communications link failure"; then
               exit 1
             fi

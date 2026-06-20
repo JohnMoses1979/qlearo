@@ -59,3 +59,14 @@ backend/*.env
 *.env.backup*
 backend.env.backup*
 frontend.env.backup*
+
+# secrets / env files
+.env
+*.env
+backend.env
+frontend.env
+backend/env
+backend/*.env
+*.env.backup*
+backend.env.backup*
+frontend.env.backup*

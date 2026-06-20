@@ -16,100 +16,135 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/qlearo_key
           chmod 600 ~/.ssh/qlearo_key
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Deploy on EC2
+      - name: Prepare env files
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_VERIFY_SID: ${{ secrets.TWILIO_VERIFY_SID }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
+          RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
+          RAZORPAY_WEBHOOK_SECRET: ${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
         run: |
-          ssh -i ~/.ssh/qlearo_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'REMOTE_EOF'
-          set -e
+          mkdir -p deploy-env
 
-          APP_DIR="/home/ubuntu/qlearo"
-          REPO_URL="https://github.com/JohnMoses1979/qlearo.git"
+          cat > deploy-env/.env <<ENVEOF
+          MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+          MYSQL_DATABASE=${MYSQL_DATABASE}
+          MYSQL_USER=${MYSQL_USER}
+          MYSQL_PASSWORD=${MYSQL_PASSWORD}
+          EXPO_PUBLIC_API_BASE_URL=${EXPO_PUBLIC_API_BASE_URL}
+          ENVEOF
 
-          if [ ! -d "$APP_DIR/.git" ]; then
-            rm -rf "$APP_DIR"
-            git clone "$REPO_URL" "$APP_DIR"
-          fi
+          cat > deploy-env/frontend.env <<ENVEOF
+          EXPO_PUBLIC_API_BASE_URL=${EXPO_PUBLIC_API_BASE_URL}
+          ENVEOF
 
-          cd "$APP_DIR"
+          cat > deploy-env/backend.env <<ENVEOF
+          SERVER_PORT=8080
 
-          echo "---- Pull latest code ----"
-          git fetch origin main
-          git reset --hard origin/main
+          SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+          SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+          SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+          SPRING_JPA_HIBERNATE_DDL_AUTO=update
 
-          echo "---- Create .env ----"
-          cat > .env <<ENVEOF
-MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-MYSQL_USER=${{ secrets.MYSQL_USER }}
-MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-EXPO_PUBLIC_API_BASE_URL=${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
-ENVEOF
+          JWT_SECRET=${JWT_SECRET}
 
-          echo "---- Create frontend.env ----"
-          cat > frontend.env <<ENVEOF
-EXPO_PUBLIC_API_BASE_URL=${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
-ENVEOF
+          CORS_ALLOWED_ORIGINS=http://${EC2_HOST},http://${EC2_HOST}:80,http://${EC2_HOST}:8080,http://${EC2_HOST}:8081
 
-          echo "---- Create backend.env ----"
-          cat > backend.env <<ENVEOF
-SERVER_PORT=8080
+          TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+          TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+          TWILIO_VERIFY_SID=${TWILIO_VERIFY_SID}
+          TWILIO_VERIFY_SERVICE_SID=${TWILIO_VERIFY_SID}
+          TWILIO_SERVICE_SID=${TWILIO_VERIFY_SID}
 
-SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${{ secrets.MYSQL_DATABASE }}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
-SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}
-SPRING_JPA_HIBERNATE_DDL_AUTO=update
+          GROQ_API_KEY=${GROQ_API_KEY}
 
-JWT_SECRET=${{ secrets.JWT_SECRET }}
+          RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+          RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+          RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
+          RAZORPAY_CURRENCY=INR
 
-CORS_ALLOWED_ORIGINS=http://${{ secrets.EC2_HOST }},http://${{ secrets.EC2_HOST }}:80,http://${{ secrets.EC2_HOST }}:8080,http://${{ secrets.EC2_HOST }}:8081
+          MAIL_USERNAME=${MAIL_USERNAME}
+          MAIL_PASSWORD=${MAIL_PASSWORD}
+          MAIL_HOST=smtp.gmail.com
+          MAIL_PORT=587
 
-TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
-TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
-TWILIO_VERIFY_SID=${{ secrets.TWILIO_VERIFY_SID }}
-TWILIO_VERIFY_SERVICE_SID=${{ secrets.TWILIO_VERIFY_SID }}
-TWILIO_SERVICE_SID=${{ secrets.TWILIO_VERIFY_SID }}
+          SPRING_MAIL_HOST=smtp.gmail.com
+          SPRING_MAIL_PORT=587
+          SPRING_MAIL_USERNAME=${MAIL_USERNAME}
+          SPRING_MAIL_PASSWORD=${MAIL_PASSWORD}
+          SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+          SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+          ENVEOF
 
-GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+          sed -i 's/^          //' deploy-env/.env deploy-env/frontend.env deploy-env/backend.env
 
-RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
-RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
-RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
-RAZORPAY_CURRENCY=INR
+      - name: Pull latest code on EC2
+        run: |
+          ssh -i ~/.ssh/qlearo_key "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" <<'REMOTE_EOF'
+            set -e
 
-MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
+            APP_DIR="/home/ubuntu/qlearo"
+            REPO_URL="https://github.com/JohnMoses1979/qlearo.git"
 
-SPRING_MAIL_HOST=smtp.gmail.com
-SPRING_MAIL_PORT=587
-SPRING_MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-SPRING_MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
-ENVEOF
+            if [ ! -d "$APP_DIR/.git" ]; then
+              rm -rf "$APP_DIR"
+              git clone "$REPO_URL" "$APP_DIR"
+            fi
 
-          echo "---- Open firewall ports ----"
-          sudo ufw allow 8081/tcp || true
-          sudo ufw allow 8080/tcp || true
+            cd "$APP_DIR"
+            git fetch origin main
+            git reset --hard origin/main
 
-          echo "---- Docker deploy ----"
-          docker compose down
-          docker compose up -d --build
+            sudo ufw allow 8081/tcp || true
+            sudo ufw allow 8080/tcp || true
+          REMOTE_EOF
 
-          echo "---- Wait for services ----"
-          sleep 40
+      - name: Upload env files to EC2
+        run: |
+          scp -i ~/.ssh/qlearo_key deploy-env/.env "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/qlearo/.env"
+          scp -i ~/.ssh/qlearo_key deploy-env/frontend.env "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/qlearo/frontend.env"
+          scp -i ~/.ssh/qlearo_key deploy-env/backend.env "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/qlearo/backend.env"
 
-          echo "---- Containers ----"
-          docker ps
+      - name: Docker deploy on EC2
+        run: |
+          ssh -i ~/.ssh/qlearo_key "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" <<'REMOTE_EOF'
+            set -e
 
-          echo "---- Health checks ----"
-          curl -I http://localhost:8081
-          curl -I http://localhost:8080 || true
+            cd /home/ubuntu/qlearo
 
-          echo "---- Backend errors ----"
-          docker compose logs backend --tail=120 | grep -Ei "Application run failed|Could not resolve placeholder|ERROR|Exception" && exit 1 || true
+            docker compose down
+            docker compose up -d --build
 
-          echo "Deployment successful"
+            sleep 40
+
+            echo "---- Containers ----"
+            docker ps
+
+            echo "---- Frontend check ----"
+            curl -I http://localhost:8081
+
+            echo "---- Backend check ----"
+            curl -I http://localhost:8080 || true
+
+            echo "---- Backend errors ----"
+            if docker compose logs backend --tail=150 | grep -Ei "Application run failed|Could not resolve placeholder|ERROR|Exception"; then
+              exit 1
+            fi
+
+            echo "Deployment successful"
           REMOTE_EOF

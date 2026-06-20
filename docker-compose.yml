@@ -6,16 +6,16 @@ services:
     env_file:
       - .env
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Root@12345}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-qlearo_db}
+      MYSQL_USER: ${MYSQL_USER:-qlearo_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Qlearo@12345}
     volumes:
       - qlearo_mysql_data:/var/lib/mysql
     networks:
       - qlearo_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-Root@12345}"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -28,6 +28,12 @@ services:
     restart: always
     env_file:
       - backend.env
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-qlearo_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-qlearo_user}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-Qlearo@12345}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
     ports:
       - "8080:8080"
     depends_on:
@@ -41,7 +47,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        EXPO_PUBLIC_API_BASE_URL: ${EXPO_PUBLIC_API_BASE_URL}
+        EXPO_PUBLIC_API_BASE_URL: ${EXPO_PUBLIC_API_BASE_URL:-http://16.208.59.201:8081/api}
     container_name: qlearo_frontend
     restart: always
     env_file:

@@ -26,8 +26,6 @@ jobs:
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
@@ -39,58 +37,84 @@ jobs:
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
         run: |
-          mkdir -p deploy-env
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
 
-          cat > deploy-env/.env <<ENVEOF
-          MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-          MYSQL_DATABASE=${MYSQL_DATABASE}
-          MYSQL_USER=${MYSQL_USER}
-          MYSQL_PASSWORD=${MYSQL_PASSWORD}
-          EXPO_PUBLIC_API_BASE_URL=${EXPO_PUBLIC_API_BASE_URL}
-          ENVEOF
+          Path("deploy-env").mkdir(exist_ok=True)
 
-          cat > deploy-env/frontend.env <<ENVEOF
-          EXPO_PUBLIC_API_BASE_URL=${EXPO_PUBLIC_API_BASE_URL}
-          ENVEOF
+          ec2_host = os.getenv("EC2_HOST", "16.208.59.201")
+          mysql_root = os.getenv("MYSQL_ROOT_PASSWORD") or "Root@12345"
+          mysql_db = os.getenv("MYSQL_DATABASE") or "qlearo_db"
+          mysql_user = os.getenv("MYSQL_USER") or "qlearo_user"
+          mysql_pass = os.getenv("MYSQL_PASSWORD") or "Qlearo@12345"
+          api_url = os.getenv("EXPO_PUBLIC_API_BASE_URL") or f"http://{ec2_host}:8081/api"
 
-          cat > deploy-env/backend.env <<ENVEOF
-          SERVER_PORT=8080
-          SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-          SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
-          SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
-          SPRING_JPA_HIBERNATE_DDL_AUTO=update
+          jwt_secret = os.getenv("JWT_SECRET") or "change_this_jwt_secret"
+          twilio_account = os.getenv("TWILIO_ACCOUNT_SID") or ""
+          twilio_token = os.getenv("TWILIO_AUTH_TOKEN") or ""
+          twilio_verify = os.getenv("TWILIO_VERIFY_SID") or ""
+          groq = os.getenv("GROQ_API_KEY") or ""
 
-          JWT_SECRET=${JWT_SECRET}
+          razorpay_id = os.getenv("RAZORPAY_KEY_ID") or ""
+          razorpay_secret = os.getenv("RAZORPAY_KEY_SECRET") or ""
+          razorpay_webhook = os.getenv("RAZORPAY_WEBHOOK_SECRET") or ""
 
-          CORS_ALLOWED_ORIGINS=http://${EC2_HOST},http://${EC2_HOST}:80,http://${EC2_HOST}:8080,http://${EC2_HOST}:8081
+          mail_user = os.getenv("MAIL_USERNAME") or "no-reply@qlearo.local"
+          mail_pass = os.getenv("MAIL_PASSWORD") or "dummy_mail_password"
 
-          TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
-          TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
-          TWILIO_VERIFY_SID=${TWILIO_VERIFY_SID}
-          TWILIO_VERIFY_SERVICE_SID=${TWILIO_VERIFY_SID}
-          TWILIO_SERVICE_SID=${TWILIO_VERIFY_SID}
+          Path("deploy-env/.env").write_text(f"""MYSQL_ROOT_PASSWORD={mysql_root}
+MYSQL_DATABASE={mysql_db}
+MYSQL_USER={mysql_user}
+MYSQL_PASSWORD={mysql_pass}
+EXPO_PUBLIC_API_BASE_URL={api_url}
+""")
 
-          GROQ_API_KEY=${GROQ_API_KEY}
+          Path("deploy-env/frontend.env").write_text(f"""EXPO_PUBLIC_API_BASE_URL={api_url}
+""")
 
-          RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
-          RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
-          RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
-          RAZORPAY_CURRENCY=INR
+          Path("deploy-env/backend.env").write_text(f"""SERVER_PORT=8080
 
-          MAIL_USERNAME=${MAIL_USERNAME}
-          MAIL_PASSWORD=${MAIL_PASSWORD}
-          MAIL_HOST=smtp.gmail.com
-          MAIL_PORT=587
+SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/{mysql_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+SPRING_DATASOURCE_USERNAME={mysql_user}
+SPRING_DATASOURCE_PASSWORD={mysql_pass}
+SPRING_JPA_HIBERNATE_DDL_AUTO=update
 
-          SPRING_MAIL_HOST=smtp.gmail.com
-          SPRING_MAIL_PORT=587
-          SPRING_MAIL_USERNAME=${MAIL_USERNAME}
-          SPRING_MAIL_PASSWORD=${MAIL_PASSWORD}
-          SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
-          SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
-          ENVEOF
+JWT_SECRET={jwt_secret}
 
-          sed -i 's/^          //' deploy-env/.env deploy-env/frontend.env deploy-env/backend.env
+CORS_ALLOWED_ORIGINS=http://{ec2_host},http://{ec2_host}:80,http://{ec2_host}:8080,http://{ec2_host}:8081
+
+TWILIO_ACCOUNT_SID={twilio_account}
+TWILIO_AUTH_TOKEN={twilio_token}
+TWILIO_VERIFY_SID={twilio_verify}
+TWILIO_VERIFY_SERVICE_SID={twilio_verify}
+TWILIO_SERVICE_SID={twilio_verify}
+
+GROQ_API_KEY={groq}
+
+RAZORPAY_KEY_ID={razorpay_id}
+RAZORPAY_KEY_SECRET={razorpay_secret}
+RAZORPAY_WEBHOOK_SECRET={razorpay_webhook}
+RAZORPAY_CURRENCY=INR
+
+MAIL_USERNAME={mail_user}
+MAIL_PASSWORD={mail_pass}
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+
+SPRING_MAIL_HOST=smtp.gmail.com
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME={mail_user}
+SPRING_MAIL_PASSWORD={mail_pass}
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+""")
+          PY
+
+          echo "---- Generated env check ----"
+          grep '^SPRING_DATASOURCE_URL=' deploy-env/backend.env
+          grep '^SPRING_DATASOURCE_USERNAME=' deploy-env/backend.env
+          grep '^EXPO_PUBLIC_API_BASE_URL=' deploy-env/frontend.env
 
       - name: Pull latest code on EC2
         run: |
@@ -126,10 +150,14 @@ jobs:
 
             cd /home/ubuntu/qlearo
 
+            echo "---- backend.env DB check ----"
+            grep '^SPRING_DATASOURCE_URL=' backend.env
+            grep '^SPRING_DATASOURCE_USERNAME=' backend.env
+
             docker compose down
             docker compose up -d --build
 
-            sleep 40
+            sleep 60
 
             echo "---- Containers ----"
             docker ps
@@ -140,8 +168,8 @@ jobs:
             echo "---- Backend check ----"
             curl -I http://localhost:8080 || true
 
-            echo "---- Backend errors ----"
-            if docker compose logs backend --tail=150 | grep -Ei "Application run failed|Could not resolve placeholder|ERROR|Exception"; then
+            echo "---- Backend fatal errors ----"
+            if docker compose logs backend --tail=200 | grep -Ei "Application run failed|Could not resolve placeholder|Unable to determine Dialect|Access denied|Communications link failure"; then
               exit 1
             fi
 

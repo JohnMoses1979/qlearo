@@ -2,66 +2,45 @@ services:
   mysql:
     image: mysql:8.0
     container_name: qlearo_mysql
-    restart: always
+    restart: unless-stopped
     env_file:
-      - .env
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Root@12345}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-qlearo_db}
-      MYSQL_USER: ${MYSQL_USER:-qlearo_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Qlearo@12345}
+      - ./backend/.env
     volumes:
-      - qlearo_mysql_data:/var/lib/mysql
-    networks:
-      - qlearo_network
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-Root@12345}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
-      retries: 20
+      retries: 10
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: qlearo_backend
-    restart: always
+    restart: unless-stopped
     env_file:
-      - backend.env
-    environment:
-      SERVER_PORT: 8080
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-qlearo_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-qlearo_user}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-Qlearo@12345}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      - ./backend/.env
     ports:
       - "8080:8080"
     depends_on:
       mysql:
         condition: service_healthy
-    networks:
-      - qlearo_network
 
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        EXPO_PUBLIC_API_BASE_URL: ${EXPO_PUBLIC_API_BASE_URL:-http://16.208.59.201:8081/api}
+        EXPO_PUBLIC_API_BASE_URL: ${EXPO_PUBLIC_API_BASE_URL}
     container_name: qlearo_frontend
-    restart: always
+    restart: unless-stopped
     env_file:
-      - frontend.env
+      - ./.env
     ports:
-      - "8081:80"
+      - "80:80"
     depends_on:
       - backend
-    networks:
-      - qlearo_network
 
 volumes:
-  qlearo_mysql_data:
-
-networks:
-  qlearo_network:
-    driver: bridge
+  mysql_data:

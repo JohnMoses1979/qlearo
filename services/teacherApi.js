@@ -50,7 +50,7 @@ const getMessage = (error, fallback) => {
 export const teacherApi = {
   async initiateRegistration(payload) {
     try {
-      const response = await apiClient.post("/teachers/register/initiate", payload);
+      const response = await apiClient.post("/api/teachers/register/initiate", payload);
       return response.data;
     } catch (error) {
       throw new Error(getMessage(error, "Unable to send OTP"));
@@ -59,7 +59,7 @@ export const teacherApi = {
 
   async verifyRegistrationOtp(payload) {
     try {
-      const response = await apiClient.post("/teachers/register/verify-otp", payload);
+      const response = await apiClient.post("/api/teachers/register/verify-otp", payload);
       return response.data;
     } catch (error) {
       throw new Error(getMessage(error, "Invalid OTP"));
@@ -69,7 +69,7 @@ export const teacherApi = {
   async completeRegistration(payload) {
     try {
       console.log("SENDING PAYLOAD:", JSON.stringify(payload, null, 2));
-      const response = await apiClient.post("/teachers/register/complete", payload);
+      const response = await apiClient.post("/api/teachers/register/complete", payload);
       return response.data;
     } catch (error) {
       console.log("400 ERROR DETAILS:", JSON.stringify(error?.response?.data, null, 2));
@@ -79,7 +79,7 @@ export const teacherApi = {
 
   async login(payload) {
     try {
-      const response = await apiClient.post("/teachers/login", payload);
+      const response = await apiClient.post("/api/teachers/login", payload);
       return response.data;
     } catch (error) {
       throw new Error(getMessage(error, "Unable to login"));

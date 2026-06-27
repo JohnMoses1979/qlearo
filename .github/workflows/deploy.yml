@@ -40,56 +40,46 @@ jobs:
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
 
       - name: Create env files
-        shell: bash
         run: |
-          set -e
-          mkdir -p deploy-env
+          cat > backend.env <<'EOF'
+MYSQL_ROOT_PASSWORD=root
+MYSQL_DATABASE=qlearo_db
+SERVER_PORT=8080
+SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/qlearo_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+SPRING_DATASOURCE_USERNAME=root
+SPRING_DATASOURCE_PASSWORD=root
+SPRING_JPA_HIBERNATE_DDL_AUTO=update
+JWT_SECRET=${{ secrets.JWT_SECRET }}
+TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
+TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
+TWILIO_VERIFY_SID=${{ secrets.TWILIO_VERIFY_SID }}
+TWILIO_VERIFY_SERVICE_SID=${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+TWILIO_SERVICE_SID=${{ secrets.TWILIO_SERVICE_SID }}
+GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
+RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
+RAZORPAY_CURRENCY=INR
+MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+SPRING_MAIL_HOST=smtp.gmail.com
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+SPRING_MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+CORS_ALLOWED_ORIGINS=http://16.208.59.201,http://16.208.59.201:80,http://16.208.59.201:8081,http://16.208.59.201:8080,http://localhost:8081,http://localhost:19006
+EOF
 
-          printf '%s\n' \
-            "MYSQL_ROOT_PASSWORD=root
-            "MYSQL_DATABASE=qlearo_db
-            "MYSQL_USER=$MYSQL_USER" \
-            "MYSQL_PASSWORD=$MYSQL_PASSWORD" \
-            "EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL" \
-            > deploy-env/.env
+          cat > frontend.env <<'EOF'
+EXPO_PUBLIC_API_BASE_URL=http://16.208.59.201:8080/api
+EOF
 
-          printf '%s\n' \
-            "EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL" \
-            > deploy-env/frontend.env
-
-          printf '%s\n' \
-            "SERVER_PORT=8080" \
-            "SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/$MYSQL_DATABASE?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC" \
-            "SPRING_DATASOURCE_USERNAME=root
-            "SPRING_DATASOURCE_PASSWORD=root
-            "SPRING_JPA_HIBERNATE_DDL_AUTO=update" \
-            "JWT_SECRET=$JWT_SECRET" \
-            "CORS_ALLOWED_ORIGINS=http://$EC2_HOST,http://$EC2_HOST:80,http://$EC2_HOST:8080,http://$EC2_HOST:8081" \
-            "TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID" \
-            "TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN" \
-            "TWILIO_VERIFY_SID=$TWILIO_VERIFY_SID" \
-            "TWILIO_VERIFY_SERVICE_SID=$TWILIO_VERIFY_SID" \
-            "TWILIO_SERVICE_SID=$TWILIO_VERIFY_SID" \
-            "GROQ_API_KEY=$GROQ_API_KEY" \
-            "RAZORPAY_KEY_ID=$RAZORPAY_KEY_ID" \
-            "RAZORPAY_KEY_SECRET=$RAZORPAY_KEY_SECRET" \
-            "RAZORPAY_WEBHOOK_SECRET=$RAZORPAY_WEBHOOK_SECRET" \
-            "RAZORPAY_CURRENCY=INR" \
-            "MAIL_USERNAME=$MAIL_USERNAME" \
-            "MAIL_PASSWORD=$MAIL_PASSWORD" \
-            "MAIL_HOST=smtp.gmail.com" \
-            "MAIL_PORT=587" \
-            "SPRING_MAIL_HOST=smtp.gmail.com" \
-            "SPRING_MAIL_PORT=587" \
-            "SPRING_MAIL_USERNAME=$MAIL_USERNAME" \
-            "SPRING_MAIL_PASSWORD=$MAIL_PASSWORD" \
-            "SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true" \
-            "SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true" \
-            > deploy-env/backend.env
-
-          echo "Generated env files"
-          grep "^SPRING_DATASOURCE_URL=" deploy-env/backend.env
-          grep "^EXPO_PUBLIC_API_BASE_URL=" deploy-env/frontend.env
+          echo "---- backend.env check ----"
+          grep -E "MYSQL_DATABASE|SPRING_DATASOURCE_URL|SPRING_DATASOURCE_USERNAME|SPRING_DATASOURCE_PASSWORD" backend.env
+          echo "---- frontend.env check ----"
+          cat frontend.env
 
       - name: Pull latest code on EC2
         shell: bash

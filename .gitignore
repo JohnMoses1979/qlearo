@@ -70,3 +70,7 @@ backend/*.env
 *.env.backup*
 backend.env.backup*
 frontend.env.backup*
+
+# APK build files - do not push to GitHub
+*.apk
+qlearo.apk

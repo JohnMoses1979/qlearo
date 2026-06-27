@@ -2,9 +2,9 @@ import axios from "axios";
 import { Platform } from "react-native";
 
 const FALLBACK_API_BASE_URL = Platform.select({
-  android: "http://192.168.0.29:8085/api",
-  ios: "http://192.168.0.29:8085/api",
-  default: "http://192.168.0.29:8085/api",
+  android: "http://16.208.59.201:8080/api",
+  ios: "http://16.208.59.201:8080/api",
+  default: "http://16.208.59.201:8080/api",
 });
 
 export const MOCK_TEST_API_BASE_URL =

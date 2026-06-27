@@ -42,6 +42,7 @@
       "expo-video",
       "expo-font",
       "expo-audio",
+      "expo-asset",
       [
         "expo-build-properties",
         {
@@ -49,8 +50,7 @@
             "usesCleartextTraffic": true
           }
         }
-      ],
-      "expo-asset"
+      ]
     ],
     "extra": {
       "eas": {

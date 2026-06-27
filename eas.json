@@ -1,24 +1,22 @@
 {
   "cli": {
-    "version": ">= 13.0.0",
-    "appVersionSource": "local"
+    "version": ">= 13.0.0"
   },
   "build": {
     "preview": {
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://16.208.59.201:8081/api"
-      },
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "http://16.208.59.201:8080/api"
       }
     },
     "production": {
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://16.208.59.201:8081/api"
-      },
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "http://16.208.59.201:8080/api"
       }
     }
   }

@@ -4,141 +4,100 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  build-and-deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
 
-    env:
-      EC2_HOST: ${{ secrets.EC2_HOST }}
-      EC2_USER: ${{ secrets.EC2_USER }}
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: qlearo_db
-      MYSQL_USER: ${{ secrets.MYSQL_USER }}
-      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-      EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-      TWILIO_VERIFY_SID: ${{ secrets.TWILIO_VERIFY_SID }}
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
-      RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
-      RAZORPAY_WEBHOOK_SECRET: ${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
-      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup SSH
-        shell: bash
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_KEY: ${{ secrets.EC2_KEY }}
         run: |
-          set -e
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/qlearo_key
+          printf "%s\n" "$EC2_KEY" > ~/.ssh/qlearo_key
           chmod 600 ~/.ssh/qlearo_key
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
 
       - name: Create env files
         run: |
-          cat > backend.env <<'EOF'
-MYSQL_ROOT_PASSWORD=root
-MYSQL_DATABASE=qlearo_db
-SERVER_PORT=8080
-SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/qlearo_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-SPRING_DATASOURCE_USERNAME=root
-SPRING_DATASOURCE_PASSWORD=root
-SPRING_JPA_HIBERNATE_DDL_AUTO=update
-JWT_SECRET=${{ secrets.JWT_SECRET }}
-TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
-TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
-TWILIO_VERIFY_SID=${{ secrets.TWILIO_VERIFY_SID }}
-TWILIO_VERIFY_SERVICE_SID=${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
-TWILIO_SERVICE_SID=${{ secrets.TWILIO_SERVICE_SID }}
-GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
-RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
-RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
-RAZORPAY_CURRENCY=INR
-MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-SPRING_MAIL_HOST=smtp.gmail.com
-SPRING_MAIL_PORT=587
-SPRING_MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-SPRING_MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
-CORS_ALLOWED_ORIGINS=http://16.208.59.201,http://16.208.59.201:80,http://16.208.59.201:8081,http://16.208.59.201:8080,http://localhost:8081,http://localhost:19006
-EOF
+          rm -f backend.env frontend.env
 
-          cat > frontend.env <<'EOF'
-EXPO_PUBLIC_API_BASE_URL=http://16.208.59.201:8080/api
-EOF
+          printf "%s\n" \
+            "MYSQL_ROOT_PASSWORD=root" \
+            "MYSQL_DATABASE=qlearo_db" \
+            "SERVER_PORT=8080" \
+            "SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/qlearo_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC" \
+            "SPRING_DATASOURCE_USERNAME=root" \
+            "SPRING_DATASOURCE_PASSWORD=root" \
+            "SPRING_JPA_HIBERNATE_DDL_AUTO=update" \
+            "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
+            "TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}" \
+            "TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}" \
+            "TWILIO_VERIFY_SID=${{ secrets.TWILIO_VERIFY_SID }}" \
+            "TWILIO_VERIFY_SERVICE_SID=${{ secrets.TWILIO_VERIFY_SERVICE_SID }}" \
+            "TWILIO_SERVICE_SID=${{ secrets.TWILIO_SERVICE_SID }}" \
+            "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" \
+            "RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}" \
+            "RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}" \
+            "RAZORPAY_CURRENCY=INR" \
+            "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" \
+            "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" \
+            "MAIL_HOST=smtp.gmail.com" \
+            "MAIL_PORT=587" \
+            "SPRING_MAIL_HOST=smtp.gmail.com" \
+            "SPRING_MAIL_PORT=587" \
+            "SPRING_MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" \
+            "SPRING_MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" \
+            "SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true" \
+            "SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true" \
+            "CORS_ALLOWED_ORIGINS=http://16.208.59.201,http://16.208.59.201:80,http://16.208.59.201:8081,http://16.208.59.201:8080,http://localhost:8081,http://localhost:19006" \
+            > backend.env
+
+          printf "%s\n" \
+            "EXPO_PUBLIC_API_BASE_URL=http://16.208.59.201:8080/api" \
+            > frontend.env
 
           echo "---- backend.env check ----"
           grep -E "MYSQL_DATABASE|SPRING_DATASOURCE_URL|SPRING_DATASOURCE_USERNAME|SPRING_DATASOURCE_PASSWORD" backend.env
+
           echo "---- frontend.env check ----"
           cat frontend.env
 
       - name: Pull latest code on EC2
-        shell: bash
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          set -e
-          ssh -i ~/.ssh/qlearo_key "$EC2_USER@$EC2_HOST" '
-            set -e
-            cd /home/ubuntu/qlearo
-            git fetch origin main
-            git reset --hard origin/main
-            sudo ufw allow 8081/tcp || true
-            sudo ufw allow 8080/tcp || true
-          '
+          ssh -i ~/.ssh/qlearo_key ubuntu@$EC2_HOST "
+            cd ~/qlearo &&
+            git fetch origin main &&
+            git reset --hard origin/main &&
+            git clean -fd -e backend/.env -e .env -e node_modules -e uploads -e qlearo.apk
+          "
 
       - name: Upload env files to EC2
-        shell: bash
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          set -e
-          scp -i ~/.ssh/qlearo_key deploy-env/.env "$EC2_USER@$EC2_HOST:/home/ubuntu/qlearo/.env"
-          scp -i ~/.ssh/qlearo_key deploy-env/frontend.env "$EC2_USER@$EC2_HOST:/home/ubuntu/qlearo/frontend.env"
-          scp -i ~/.ssh/qlearo_key deploy-env/backend.env "$EC2_USER@$EC2_HOST:/home/ubuntu/qlearo/backend.env"
+          scp -i ~/.ssh/qlearo_key backend.env ubuntu@$EC2_HOST:~/qlearo/backend/.env
+          scp -i ~/.ssh/qlearo_key frontend.env ubuntu@$EC2_HOST:~/qlearo/.env
 
       - name: Docker deploy on EC2
-        shell: bash
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          set -e
-          ssh -i ~/.ssh/qlearo_key "$EC2_USER@$EC2_HOST" '
-            set -e
-            cd /home/ubuntu/qlearo
-
-            echo "---- backend.env check ----"
-            grep "^SPRING_DATASOURCE_URL=" backend.env
-            grep "^SPRING_DATASOURCE_USERNAME=root
-
-            echo "---- docker compose env check ----"
-            grep -n "backend.env" docker-compose.yml
-
-            echo "---- Docker deploy ----"
-            docker compose down
-            docker compose up -d --build
-
-            sleep 60
-
-            echo "---- Containers ----"
-            docker ps
-
-            echo "---- Backend env inside container ----"
-            docker exec qlearo_backend printenv | grep SPRING_DATASOURCE
-
-            echo "---- Frontend check ----"
-            curl -I http://localhost:8081
-
-            echo "---- Backend check ----"
-            curl -I http://localhost:8080 || true
-
-            echo "---- Fatal backend errors ----"
-            if docker compose logs backend --tail=200 | grep -Ei "Application run failed|Could not resolve placeholder|Unable to determine Dialect|Access denied|Communications link failure"; then
-              exit 1
-            fi
-
-            echo "Deployment successful"
-          '
+          ssh -i ~/.ssh/qlearo_key ubuntu@$EC2_HOST "
+            cd ~/qlearo &&
+            echo '---- backend env check ----' &&
+            grep -E 'MYSQL_DATABASE|SPRING_DATASOURCE_URL|SPRING_DATASOURCE_USERNAME|SPRING_DATASOURCE_PASSWORD' backend/.env &&
+            echo '---- docker compose deploy ----' &&
+            sudo docker compose down &&
+            sudo docker compose up -d --build &&
+            sudo docker ps
+          "
